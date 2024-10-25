@@ -1,0 +1,5 @@
+db_host = 'db-test.c1262mmcgzzj.us-east-1.rds.amazonaws.com'
+db_port = '3306'  
+db_user = 'admin'
+db_password = 'adminpwrd'
+db_name = 'test_database'
