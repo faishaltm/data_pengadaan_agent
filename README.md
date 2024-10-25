@@ -1,3 +1,6 @@
+**This is ChatGPT-generated content that I haven't edited yet.**
+
+
 # Langchain Database Agent with Keyword-Based Search and Visualization
 
 Welcome to the Langchain Database Agent! This tool uses Langchain to create a powerful and intelligent agent that can interact with a database, conduct keyword-based searches, and visualize data based on user queries. The tool combines efficient keyword management, similarity search, and graphing capabilities, enabling users to derive meaningful insights from their data seamlessly.
