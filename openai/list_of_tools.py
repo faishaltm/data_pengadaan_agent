@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import sqlite3
 import json
+import base64
 from openai import OpenAI
 from sklearn.metrics.pairwise import cosine_similarity
 from sqlalchemy import create_engine, inspect
@@ -96,3 +97,90 @@ def schema_check() -> str:
 
     # Return the schema information as formatted JSON
     return json.dumps({"schema": schema_info}, indent=4)
+
+def bar_chart_tool(
+    sql_query: str,
+    x_column: str,
+    y_column: str,
+    chart_title: str,
+    image_filename: str,
+    image_directory: str = './images'
+) -> str:
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    import os
+    import sqlite3
+
+    # Define the path for the intermediary database
+    db_path = 'intermediary.db'
+
+    # Connect to SQLite database and execute the SQL query
+    try:
+        conn = sqlite3.connect(db_path)
+        df = pd.read_sql_query(sql_query, conn)
+    except Exception as e:
+        return f"Error executing SQL query: {e}"
+    finally:
+        conn.close()
+
+    # Verify that columns exist
+    if x_column not in df.columns:
+        return f"Error: Column '{x_column}' not found in DataFrame."
+    if y_column not in df.columns:
+        return f"Error: Column '{y_column}' not found in DataFrame."
+
+    # Create the bar chart
+    plt.figure()
+    try:
+        df.plot(kind='bar', x=x_column, y=y_column, title=chart_title, legend=False)
+        plt.xticks(rotation=45)
+    except Exception as e:
+        return f"Error creating bar chart: {e}"
+
+    # Ensure the image directory exists
+    try:
+        os.makedirs(image_directory, exist_ok=True)
+    except OSError as e:
+        return f"Error creating directory '{image_directory}': {e}"
+
+    # Save the chart
+    image_path = os.path.join(image_directory, image_filename)
+    try:
+        plt.savefig(image_path, format='png', bbox_inches='tight')
+        plt.close()
+    except Exception as e:
+        return f"Error saving image: {e}"
+    
+    try:    
+        with open(image_path, "rb") as image_file:
+            base64_image = base64.b64encode(image_file.read()).decode('utf-8')
+    except Exception as e:
+        return f"Error encoding image to base64: {e}"
+    
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Explain the data in the graph",
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/png;base64,{base64_image}"
+                            },
+                        },
+                    ],
+                }
+            ],
+        )
+        description = response.choices[0].message.content
+    except Exception as e:
+        return f"Error getting image description: {e}"
+
+    return f"Image saved at {image_path}. Description: {description}"
+

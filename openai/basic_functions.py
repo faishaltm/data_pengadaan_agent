@@ -1,12 +1,15 @@
 import openai
 import json
+import itertools
+import time
 from openai import OpenAI
-from list_of_tools import mini_retrieve_similar_keywords, schema_check, intermediary_dataframe_retrieval
+from list_of_tools import mini_retrieve_similar_keywords, schema_check, intermediary_dataframe_retrieval, bar_chart_tool
 
 tool_functions = {
     'mini_retrieve_similar_keywords': mini_retrieve_similar_keywords,
     'schema_check': schema_check,
-    'intermediary_dataframe_retrieval': intermediary_dataframe_retrieval
+    'intermediary_dataframe_retrieval': intermediary_dataframe_retrieval,
+    'bar_chart_tool': bar_chart_tool
             }
 
 client = OpenAI()
@@ -18,20 +21,17 @@ You will assist a user by following a structured sequence to retrieve database i
 # Steps
 
 1. **New Query Start**: Begin every task from this step to ensure consistency.
-2. **Use the `mini_retrieve_similar_keywords` tool**: Utilize this tool to find keywords similar to the user's query, filtering data relevant to their request.
+2. **ALWAYS Use the `mini_retrieve_similar_keywords` tool**: Utilize this tool to find keywords similar to the user's query, OTHERWISE THE QUERY WILL FAULT. filtering data relevant to their request.
 3. **Validate and select appropriate keywords**: From the similar keywords returned, select those with high similarity scores (above 0.6). Group them logically based on meaning and their relationship to the user's request.
 4. **Check database information**: Use the `schema_check` tool to understand the database table structure before querying.
 5. **Construct a SQL query**:
    - Use the validated keywords to filter entries in the 'filtered_keywords' column.
    - Apply logical operators: use `OR` for synonyms and `AND` for non-synonyms. Exclude the word 'pengadaan'.
+   - Use filtering based on user's query such as using satuan kerja or nama dinas in 'satuan_kerja' column, and based on time in the 'tanggal_umumkan_paket' column.
    - Follow examples for query construction.
 
 6. **Execute query**: Use the `intermediary_dataframe_retrieval` tool to run the constructed query and retrieve data.
-
-# Output Format
-
-- The SQL query should be structured to align with the formatted examples.
-- Return results from the query execution in a clear and concise manner.
+7. **Retrieve Graph**: If the user asking a graphic, use the respective visualization tools.
 
 # Examples
 
@@ -44,7 +44,7 @@ You will assist a user by following a structured sequence to retrieve database i
   ```
   (In practice, results will vary based on database contents.)
 
-**User Request:** "informasi terkait alat tulis"  
+**User Request:** "informasi terkait alat tulis "  
 - **Group 1:** 'alat', 'peralatan'  
 - **Group 2:** 'tulis', 'pensil', 'pulpen'  
 - **Query Result:**  
@@ -99,13 +99,16 @@ def execute_tool_call(tool_call):
         }
 
 def get_answer(run, thread):
+    spinner = itertools.cycle(['-', '\\', '|', '/'])
+    
     while run.status != 'completed':
         run = openai.beta.threads.runs.retrieve(
             thread_id = thread.id,
             run_id = run.id
         )
     
-        print(f"Run status: {run.status}")
+        print(f"\rRun status: {run.status} {next(spinner)}", end="", flush=True)
+        time.sleep(0.1)
         if run.status == 'requires_action':
             tool_calls = run.required_action.submit_tool_outputs.tool_calls
             tool_outputs = [execute_tool_call(call) for call in run.required_action.submit_tool_outputs.tool_calls]
