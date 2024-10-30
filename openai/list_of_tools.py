@@ -150,37 +150,6 @@ def bar_chart_tool(
         plt.close()
     except Exception as e:
         return f"Error saving image: {e}"
-    
-    try:    
-        with open(image_path, "rb") as image_file:
-            base64_image = base64.b64encode(image_file.read()).decode('utf-8')
-    except Exception as e:
-        return f"Error encoding image to base64: {e}"
-    
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": "Explain the data in the graph",
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/png;base64,{base64_image}"
-                            },
-                        },
-                    ],
-                }
-            ],
-        )
-        description = response.choices[0].message.content
-    except Exception as e:
-        return f"Error getting image description: {e}"
 
-    return f"Image saved at {image_path}. Description: {description}"
+    return f"Image saved at {image_path}. Give Insights to the user based on this data: {df}"
 
