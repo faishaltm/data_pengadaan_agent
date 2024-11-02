@@ -163,7 +163,6 @@ line_chart_tool_definition = {
             y_labels: list = ["Total Budget (Rp Billion)", "Number of Packages"],
             chart_title: str = "Procurement Trends Over Time",
             image_filename: str = "procurement_trends.png",
-            image_directory: str = './images',
             figsize: tuple = (12, 6)
         """,
         'parameters': {
@@ -199,17 +198,13 @@ line_chart_tool_definition = {
                     'type': 'string',
                     'description': 'Filename for saving the image. Default: "procurement_trends.png"'
                 },
-                'image_directory': {
-                    'type': 'string',
-                    'description': 'Directory to save the image. Default: "./images"'
-                },
                 'figsize': {
                     'type': 'array',
                     'items': {'type': 'number'},
                     'description': 'Figure size in inches (width, height). Default: (12, 6)'
                 }
             },
-            'required': ['sql_query', 'x_column', 'y_columns','x_label', 'y_labels', 'chart_title', 'image_filename', 'image_directory', 'figsize'],  # All parameters have defaults
+            'required': ['sql_query', 'x_column', 'y_columns','x_label', 'y_labels', 'chart_title', 'image_filename', 'figsize'],  # All parameters have defaults
             'additionalProperties': False
         }
     }
